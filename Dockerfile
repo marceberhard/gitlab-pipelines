@@ -1,4 +1,6 @@
+# ----------
 # EPJ - Full scalable, multistage, gitlab pipeline build optimized
+# ----------
 
 FROM python:3.8-alpine AS builder
 RUN apk update && apk add --upgrade alpine-sdk
@@ -17,3 +19,6 @@ RUN chown -R svcuser:appgroup /app
 WORKDIR /app
 USER svcuser
 ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "src.app:APP"]
+
+
+# ----------

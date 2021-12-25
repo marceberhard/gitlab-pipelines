@@ -1,3 +1,5 @@
+# EPJ - Full scalable, multistage, gitlab pipeline build optimized
+
 FROM python:3.8-alpine AS builder
 RUN apk update && apk add --upgrade alpine-sdk
 COPY requirements.txt /app/

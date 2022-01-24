@@ -1,0 +1,102 @@
+# This file is based on an official gitlab template
+# by Marc Eberhard@OST in HS21, Module Netaut-Task2
+# As more granular explained in the Readme-file, there's the section(out commented) to build and push the image within the gitlab pipeline.
+
+###########################
+#*** GitLab CI/CD File ***#
+###########################
+
+stages:
+  - build
+# - build-push  
+  - merge-validity-check
+  - development
+  - production
+  - testing-dev
+  - testing-prod
+
+image: registry.gitlab.schuler.ch:45023/instituat-stud/netaut/hs21/nameofpupil/netaut-testat2/ansible-netaut
+
+build: 
+  stage: build
+  tags:
+    - ins-student
+  script: 
+    - ansible-galaxy collection install cisco.ios
+    - cd ..
+    - chmod -R 750 netaut-testat2
+    - cd netaut-testat2
+
+#build-push:
+#  image: alpine:latest
+#  stage: build-push
+#  tags:
+#    - ins-student
+#  services:
+#    - docker:dind
+#  before_script:
+#    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#  script:
+#    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
+#    - docker push "$CI_REGISTRY_IMAGE"
+
+development:
+  stage: development
+  tags:
+    - ins-student
+  script:
+    - cd _ansible
+    - echo "development"
+    - ansible-playbook playbook.yml -i dev_inventory
+#    - ansible-playbook --ask-vault-pass playbook.yml -i dev_inventory
+#    - NETAUT21
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "development" && $CI_PIPELINE_SOURCE != "merge_request_event"'
+
+merge-validity-check:
+  stage: merge-validity-check
+  tags:
+    - ins-student
+  script:
+    - cd _ansible
+    - ansible-playbook playbook.yml -i dev_inventory --check
+#    - ansible-playbook --ask-vault-pass playbook.yml -i dev_inventory --check
+#    - $CI_VAULTPASS
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+production:
+  stage: production
+  tags:
+    - ins-student
+  script:
+    - cd _ansible
+    - ansible-playbook playbook.yml -i prod_inventory
+#    - ansible-playbook --ask-vault-pass playbook.yml -i prod_inventory
+#    - $CI_VAULTPASS
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+testing-dev:
+  stage: testing-dev
+  tags:
+    - ins-student 
+  script:
+    - cd _ansible
+    - ansible-playbook network-testing.yml -i dev_inventory
+#   - ansible-playbook --ask-vault-pass network-testing.yml -i dev_inventory
+#   - $CI_VAULTPASS
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "development" && $CI_PIPELINE_SOURCE != "merge_request_event"'
+
+testing-prod:
+  stage: testing-prod
+  tags:
+    - ins-student 
+  script:
+    - cd _ansible
+    - ansible-playbook network-testing.yml -i prod_inventory
+#    - ansible-playbook --ask-vault-pass network-testing.yml -i prod_inventory
+#    - $CI_VAULTPASS
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "merge_request_event"'
